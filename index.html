@@ -566,8 +566,8 @@ function generate() {
 function genHub(hub, spokes, sh) {
   const hl2 = sub(hub.lan);
   const ts  = new Date().toLocaleString();
-  const bar = '═'.repeat(60);
-  const dash = n => '─'.repeat(n);
+  const bar = '='.repeat(60);
+  const dash = n => '-'.repeat(n);
 
   let c = '';
   c += L(`# ${bar}`);
@@ -614,16 +614,14 @@ function genHub(hub, spokes, sh) {
 
   // Tunnel Interfaces
   c += L(`# ${dash(18)} Tunnel Interfaces ${dash(23)}`);
+  c += L(`# NOTE: Phase 1 auto-creates the tunnel interface. This block sets IP, remote-ip, and ping.`);
   c += L(`config system interface`);
   spokes.forEach(s => s.wans.forEach(w => {
     const t = htn(s,w.num);
     c += L(`    edit "${t}"`);
-    c += L(`        set vdom "root"`);
     c += L(`        set ip ${w.ht} 255.255.255.255`);
     c += L(`        set allowaccess ping`);
-    c += L(`        set type tunnel`);
     c += L(`        set remote-ip ${w.st} 255.255.255.0`);
-    c += L(`        set interface "${hub.wan}"`);
     c += L(`    next`);
   }));
   c += L(`end\n`);
@@ -688,8 +686,8 @@ function genSpoke(hub, s, sh) {
   const multi  = s.wans.length > 1;
   const zone   = 'vpn-overlay';
   const ts     = new Date().toLocaleString();
-  const bar    = '═'.repeat(60);
-  const dash   = n => '─'.repeat(n);
+  const bar    = '='.repeat(60);
+  const dash   = n => '-'.repeat(n);
 
   let c = '';
   c += L(`# ${bar}`);
@@ -737,16 +735,14 @@ function genSpoke(hub, s, sh) {
 
   // Tunnel Interfaces
   c += L(`# ${dash(18)} Tunnel Interfaces ${dash(23)}`);
+  c += L(`# NOTE: Phase 1 auto-creates the tunnel interface. This block sets IP, remote-ip, and ping.`);
   c += L(`config system interface`);
   s.wans.forEach(w => {
     const t = stn(s,w.num);
     c += L(`    edit "${t}"`);
-    c += L(`        set vdom "root"`);
     c += L(`        set ip ${w.st} 255.255.255.255`);
     c += L(`        set allowaccess ping`);
-    c += L(`        set type tunnel`);
     c += L(`        set remote-ip ${w.ht} 255.255.255.0`);
-    c += L(`        set interface "${w.wi}"`);
     c += L(`    next`);
   });
   c += L(`end\n`);
