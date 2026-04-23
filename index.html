@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FortiGate VPN/BGP Config Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d1117;--surf:#161b22;--surf2:#1c2330;--border:#30363d;
+  --accent:#f97316;--acc2:#fb923c;--green:#3fb950;--blue:#58a6ff;--purple:#bc8cff;
+  --text:#e6edf3;--muted:#8b949e;--mono:'Share Tech Mono',monospace;--sans:'Barlow',sans-serif;--rad:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:300;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(249,115,22,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(249,115,22,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:36px 20px 80px}
+
+/* HEADER */
+header{display:flex;align-items:center;gap:16px;margin-bottom:40px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.logo{width:42px;height:42px;background:var(--accent);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--mono);font-size:15px;font-weight:bold;color:#000}
+.hdr h1{font-size:20px;font-weight:700;letter-spacing:-.4px}
+.hdr p{font-size:12px;color:var(--muted);margin-top:2px;font-family:var(--mono)}
+
+/* TABS */
+.tabs{display:flex;gap:3px;margin-bottom:28px;background:var(--surf);padding:4px;border-radius:var(--rad);border:1px solid var(--border);width:fit-content}
+.tab{padding:7px 18px;border-radius:6px;font-family:var(--mono);font-size:12px;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:all .15s;letter-spacing:.5px}
+.tab.active{background:var(--accent);color:#000;font-weight:700}
+.tab:hover:not(.active){color:var(--text);background:var(--surf2)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--surf);border:1px solid var(--border);border-radius:var(--rad);padding:20px;margin-bottom:16px}
+.card-title{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';display:inline-block;width:5px;height:5px;background:var(--accent);border-radius:50%}
+.card-title.blue{color:var(--blue)}.card-title.blue::before{background:var(--blue)}
+.card-title.green{color:var(--green)}.card-title.green::before{background:var(--green)}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+@media(max-width:750px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+/* FIELDS */
+.field{display:flex;flex-direction:column;gap:5px}
+label{font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:.4px}
+input[type=text],input[type=password],select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:8px 10px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:border-color .15s}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(249,115,22,.1)}
+input::placeholder{color:#3d444d}
+select option{background:var(--surf)}
+
+/* SECTION DIVIDER */
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin:24px 0 12px}
+.sec-label{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:5px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:none;transition:all .15s}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text);border-color:var(--text)}
+.btn-danger{background:transparent;color:#f85149;border:1px solid rgba(248,81,73,.4);padding:4px 10px;font-size:10px}.btn-danger:hover{background:rgba(248,81,73,.1)}
+.btn-gen{width:100%;padding:13px;background:var(--accent);color:#000;border:none;border-radius:var(--rad);font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s;margin-top:8px}
+.btn-gen:hover{background:var(--acc2);transform:translateY(-1px);box-shadow:0 6px 24px rgba(249,115,22,.2)}
+
+/* SPOKE CARDS */
+.spoke-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--rad);margin-bottom:12px}
+.spoke-hdr{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surf2);border-bottom:1px solid var(--border);border-radius:var(--rad) var(--rad) 0 0;cursor:pointer;user-select:none}
+.spoke-hdr.closed{border-radius:var(--rad);border-bottom:none}
+.spoke-num{font-family:var(--mono);font-size:10px;color:var(--purple);background:rgba(188,140,255,.08);border:1px solid rgba(188,140,255,.2);border-radius:4px;padding:2px 8px;flex-shrink:0}
+.spoke-preview{font-family:var(--mono);font-size:13px;color:var(--text);flex:1}
+.badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:10px;letter-spacing:.5px;flex-shrink:0}
+.badge-sdwan{background:rgba(88,166,255,.08);color:var(--blue);border:1px solid rgba(88,166,255,.2)}
+.badge-bgp{background:rgba(63,185,80,.08);color:var(--green);border:1px solid rgba(63,185,80,.2)}
+.chevron{color:var(--muted);font-size:11px;transition:transform .2s;flex-shrink:0}
+.chevron.open{transform:rotate(180deg)}
+.spoke-body{padding:20px}
+
+/* WAN ROWS */
+.wan-section-hdr{display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px;padding-bottom:8px;border-bottom:1px solid rgba(88,166,255,.15)}
+.wan-section-label{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue)}
+.wan-row{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:8px}
+.wan-row-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.wan-label{font-family:var(--mono);font-size:10px;color:var(--blue);letter-spacing:1px}
+.wan-fields{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:900px){.wan-fields{grid-template-columns:1fr 1fr}}
+
+/* ALERT */
+.alert{background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.25);border-radius:6px;padding:10px 14px;font-size:12px;color:#f85149;margin-bottom:14px;font-family:var(--mono);display:none}
+.alert.show{display:block}
+
+/* OUTPUT */
+.output-section{margin-top:32px;display:none}
+.output-section.show{display:block}
+.out-tabs{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:0}
+.out-tab{padding:6px 14px;font-family:var(--mono);font-size:11px;cursor:pointer;border:1px solid var(--border);border-bottom:none;border-radius:5px 5px 0 0;background:var(--surf);color:var(--muted);transition:all .15s}
+.out-tab.active{background:var(--surf2);color:var(--accent);border-color:var(--accent);border-bottom-color:var(--surf2)}
+.out-box{position:relative;background:var(--surf2);border:1px solid var(--border);border-radius:0 var(--rad) var(--rad) var(--rad)}
+.copy-btn{position:absolute;top:10px;right:10px;padding:5px 12px;background:var(--border);color:var(--text);border:none;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s;z-index:10;letter-spacing:.5px}
+.copy-btn:hover{background:var(--accent);color:#000}
+.copy-btn.ok{background:var(--green);color:#000}
+pre{padding:20px;font-family:var(--mono);font-size:12px;line-height:1.75;color:var(--text);overflow-x:auto;white-space:pre;max-height:600px;overflow-y:auto}
+pre::-webkit-scrollbar{width:5px;height:5px}
+pre::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.kw{color:#ff7b72}.str{color:#a5d6ff}.num{color:#79c0ff}.cmt{color:#6e7681;font-style:italic}
+
+/* REFERENCE */
+.ref-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
+.ref-table th{text-align:left;padding:7px 10px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
+.ref-table td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text)}
+.ref-table tr:last-child td{border-bottom:none}
+.ref-table td:first-child{color:var(--muted)}
+.verify-cmds{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:14px 18px;font-family:var(--mono);font-size:12px;line-height:2;color:var(--text)}
+.vc-g{color:var(--green)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="logo">FG</div>
+  <div class="hdr">
+    <h1>FortiGate VPN / BGP Config Generator</h1>
+    <p>Multi-Spoke &nbsp;·&nbsp; Multi-WAN (up to 3) &nbsp;·&nbsp; IPsec IKEv2 &nbsp;·&nbsp; eBGP &nbsp;·&nbsp; SD-WAN &nbsp;·&nbsp; Interface Mode</p>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="mainTab('config',this)">Config Generator</button>
+  <button class="tab" onclick="mainTab('verify',this)">Verification</button>
+  <button class="tab" onclick="mainTab('ref',this)">Reference</button>
+</div>
+
+<!-- ══════════════════════ CONFIG TAB ══════════════════════ -->
+<div id="tab-config" class="tab-panel active">
+
+  <div class="alert" id="val-alert"></div>
+
+  <!-- SHARED -->
+  <div class="card">
+    <div class="card-title">Shared / Crypto Settings</div>
+    <div class="g4">
+      <div class="field"><label>Pre-Shared Key</label><input type="password" id="psk" placeholder="MySecretKey123!"></div>
+      <div class="field"><label>IKE Version</label>
+        <select id="ike-ver">
+          <option value="2" selected>IKEv2 (recommended)</option>
+          <option value="1">IKEv1</option>
+        </select>
+      </div>
+      <div class="field"><label>Proposal (Ph1 &amp; Ph2)</label>
+        <select id="proposal">
+          <option value="aes128-sha256" selected>aes128-sha256</option>
+          <option value="aes256-sha256">aes256-sha256</option>
+          <option value="aes256-sha384">aes256-sha384</option>
+          <option value="aes128gcm-prfsha256">aes128gcm-prfsha256</option>
+        </select>
+      </div>
+      <div class="field"><label>DH Group</label>
+        <select id="dhgrp">
+          <option value="19" selected>19 — ECP256 (recommended)</option>
+          <option value="20">20 — ECP384</option>
+          <option value="14">14 — MODP2048</option>
+          <option value="5">5 — MODP1536</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- HUB -->
+  <div class="card">
+    <div class="card-title">Hub — Cloud / DC Firewall (Single WAN)</div>
+    <div class="g4" style="margin-bottom:12px">
+      <div class="field"><label>Hostname</label><input type="text" id="hub-hostname" placeholder="vm-acme-fgt-01"></div>
+      <div class="field"><label>WAN Interface</label><input type="text" id="hub-wan" placeholder="port1"></div>
+      <div class="field"><label>LAN Interface</label><input type="text" id="hub-lan-intf" placeholder="port2"></div>
+      <div class="field"><label>Hub Public WAN IP</label><input type="text" id="hub-wan-ip" placeholder="216.245.142.115"></div>
+    </div>
+    <div class="g3">
+      <div class="field"><label>Hub LAN Subnet (CIDR)</label><input type="text" id="hub-lan" placeholder="172.16.1.0/24"></div>
+      <div class="field"><label>BGP Router ID</label><input type="text" id="hub-router-id" placeholder="1.1.1.1"></div>
+      <div class="field"><label>BGP AS Number</label><input type="text" id="hub-as" placeholder="65010"></div>
+    </div>
+  </div>
+
+  <!-- SPOKES -->
+  <div class="sec-head">
+    <div class="sec-label">Spoke Sites</div>
+    <button class="btn btn-ghost" onclick="addSpoke()">+ Add Spoke</button>
+  </div>
+
+  <div id="spokes-container"></div>
+
+  <button class="btn-gen" onclick="generate()">⚡ Generate All Configurations</button>
+
+  <!-- OUTPUT -->
+  <div class="output-section" id="output-section">
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--green);margin-bottom:10px">● CONFIG READY — SELECT DEVICE TAB</div>
+    <div class="out-tabs" id="out-tabs"></div>
+    <div class="out-box">
+      <button class="copy-btn" id="copy-btn" onclick="copyConfig()">COPY</button>
+      <pre id="config-out"></pre>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════ VERIFY TAB ══════════════════════ -->
+<div id="tab-verify" class="tab-panel">
+  <div class="card">
+    <div class="card-title green">Verification Commands</div>
+    <div class="verify-cmds">
+<span class="vc-g"># ── BGP ──────────────────────────────────────────────</span>
+get router info bgp summary
+get router info bgp neighbors &lt;neighbor-ip&gt; received-routes
+get router info bgp neighbors &lt;neighbor-ip&gt; advertised-routes
+get router info routing-table bgp
+
+<span class="vc-g"># ── IPsec ────────────────────────────────────────────</span>
+get vpn ipsec tunnel summary
+diagnose vpn ike gateway list
+diagnose vpn tunnel list
+
+<span class="vc-g"># ── Connectivity ────────────────────────────────────</span>
+execute ping-options source &lt;local-tunnel-ip&gt;
+execute ping &lt;remote-tunnel-ip&gt;
+
+<span class="vc-g"># ── Routing ─────────────────────────────────────────</span>
+get router info routing-table all
+get router info routing-table details &lt;prefix&gt;
+
+<span class="vc-g"># ── SD-WAN ──────────────────────────────────────────</span>
+diagnose sys sdwan health-check
+diagnose sys sdwan member
+diagnose sys sdwan service
+get system sdwan
+
+<span class="vc-g"># ── Policies ────────────────────────────────────────</span>
+show firewall policy
+
+<span class="vc-g"># ── BGP Debug (disable after!) ──────────────────────</span>
+diagnose ip router bgp level info
+diagnose ip router bgp all enable
+diagnose debug enable
+diagnose debug disable
+diagnose ip router bgp all disable
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ REF TAB ══════════════════════ -->
+<div id="tab-ref" class="tab-panel">
+  <div class="card">
+    <div class="card-title">BGP State Reference</div>
+    <table class="ref-table">
+      <tr><th>State</th><th>Meaning</th><th>Action</th></tr>
+      <tr><td>Idle</td><td>Not starting</td><td>Check AS numbers and interface binding</td></tr>
+      <tr><td>Connect</td><td>TCP/179 failing</td><td>Ping tunnel IP — check firewall policy and Phase 2 selectors</td></tr>
+      <tr><td>Active</td><td>Retrying TCP</td><td>Verify tunnel up, check routing to neighbor IP</td></tr>
+      <tr><td>OpenSent</td><td>Waiting for reply</td><td>Verify remote-as matches peer config</td></tr>
+      <tr><td>OpenConfirm</td><td>Almost there</td><td>Check timers match</td></tr>
+      <tr><td>Established ✅</td><td>Session up</td><td>Verify advertised/received routes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-title">SD-WAN Mode Reference</div>
+    <table class="ref-table">
+      <tr><th>Mode</th><th>Behavior</th><th>Best For</th></tr>
+      <tr><td>lowest-cost</td><td>Cheapest member meeting SLA (generated default)</td><td>Active/passive failover</td></tr>
+      <tr><td>sla</td><td>Any member meeting SLA thresholds</td><td>Active/active load sharing</td></tr>
+      <tr><td>best-quality</td><td>Best measured quality metric</td><td>Latency-sensitive apps</td></tr>
+      <tr><td>manual</td><td>Static priority order</td><td>Simple failover, no SLA</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-title">Private AS Ranges</div>
+    <table class="ref-table">
+      <tr><th>Range</th><th>Type</th><th>Notes</th></tr>
+      <tr><td>64512 – 65534</td><td>2-byte private</td><td>Standard — recommended for most deployments</td></tr>
+      <tr><td>4200000000 – 4294967294</td><td>4-byte private</td><td>Large scale / service provider</td></tr>
+      <tr><td>65000</td><td>⚠ Avoid</td><td>Overused in lab docs — skip in production</td></tr>
+    </table>
+  </div>
+</div>
+
+</div>
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let spokeIdCtr = 0;
+let configs = {};
+let activeOut = 'hub';
+
+// ─── MAIN TABS ───────────────────────────────────────────
+function mainTab(name, el) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+// ─── OUTPUT TABS ─────────────────────────────────────────
+function switchOut(key, el) {
+  activeOut = key;
+  document.querySelectorAll('.out-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('config-out').innerHTML = hl(configs[key] || '');
+  resetCopy();
+}
+
+// ─── SPOKE DOM ───────────────────────────────────────────
+function addSpoke() {
+  const id = spokeIdCtr++;
+  const container = document.getElementById('spokes-container');
+  const idx = container.children.length + 1;
+  const div = document.createElement('div');
+  div.className = 'spoke-card';
+  div.dataset.sid = id;
+  div.innerHTML = `
+    <div class="spoke-hdr" id="shdr-${id}" onclick="toggleSpoke(${id})">
+      <span class="spoke-num">SPOKE ${idx}</span>
+      <span class="spoke-preview" id="sprev-${id}">New Spoke</span>
+      <span class="badge badge-bgp">eBGP</span>
+      <span class="badge badge-sdwan" id="sdwanbadge-${id}" style="display:none">SD-WAN</span>
+      <button class="btn btn-danger" onclick="removeSpoke(event,${id})">REMOVE</button>
+      <span class="chevron open" id="chev-${id}">▼</span>
+    </div>
+    <div class="spoke-body" id="sbody-${id}">
+      <div class="g4">
+        <div class="field"><label>Hostname</label>
+          <input type="text" id="s${id}-hn" placeholder="ACME-FW-01"
+            oninput="document.getElementById('sprev-${id}').textContent=this.value||'New Spoke'">
+        </div>
+        <div class="field"><label>Hub Tunnel Prefix</label>
+          <input type="text" id="s${id}-hp" placeholder="To_ATL">
+        </div>
+        <div class="field"><label>Spoke Tunnel Prefix</label>
+          <input type="text" id="s${id}-sp" placeholder="To_Azure">
+        </div>
+        <div class="field"><label>LAN Interface</label>
+          <input type="text" id="s${id}-li" placeholder="internal">
+        </div>
+      </div>
+      <div class="g3" style="margin-top:12px">
+        <div class="field"><label>Spoke LAN Subnet (CIDR)</label>
+          <input type="text" id="s${id}-ln" placeholder="10.16.58.0/24">
+        </div>
+        <div class="field"><label>BGP Router ID</label>
+          <input type="text" id="s${id}-rid" placeholder="2.2.2.2">
+        </div>
+        <div class="field"><label>BGP AS Number</label>
+          <input type="text" id="s${id}-as" placeholder="65020">
+        </div>
+      </div>
+      <div class="wan-section-hdr">
+        <span class="wan-section-label">WAN Interfaces</span>
+        <button class="btn btn-ghost" style="font-size:10px;padding:4px 12px" id="addwan-${id}" onclick="addWan(${id})">+ Add WAN</button>
+      </div>
+      <div id="wans-${id}"></div>
+    </div>`;
+  container.appendChild(div);
+  addWan(id);
+  renumberSpokes();
+}
+
+function removeSpoke(e, id) {
+  e.stopPropagation();
+  document.querySelector(`[data-sid="${id}"]`).remove();
+  renumberSpokes();
+}
+
+function toggleSpoke(id) {
+  const body = document.getElementById(`sbody-${id}`);
+  const hdr  = document.getElementById(`shdr-${id}`);
+  const chev = document.getElementById(`chev-${id}`);
+  const closed = body.style.display === 'none';
+  body.style.display = closed ? 'block' : 'none';
+  chev.classList.toggle('open', closed);
+  hdr.classList.toggle('closed', !closed);
+}
+
+function renumberSpokes() {
+  document.querySelectorAll('.spoke-card').forEach((c,i) => {
+    const n = c.querySelector('.spoke-num');
+    if (n) n.textContent = `SPOKE ${i+1}`;
+  });
+}
+
+// ─── WAN DOM ──────────────────────────────────────────────
+function addWan(sid) {
+  const wc = document.getElementById(`wans-${sid}`);
+  const n = wc.children.length;
+  if (n >= 3) return;
+  const wNum = n + 1;
+  const row = document.createElement('div');
+  row.className = 'wan-row';
+  row.dataset.wn = wNum;
+  row.innerHTML = `
+    <div class="wan-row-hdr">
+      <span class="wan-label">WAN ${wNum}</span>
+      ${wNum > 1 ? `<button class="btn btn-danger" onclick="removeWan(this,${sid})">REMOVE WAN</button>` : ''}
+    </div>
+    <div class="wan-fields">
+      <div class="field"><label>WAN Interface (spoke)</label>
+        <input type="text" data-f="wi" placeholder="port${wNum}">
+      </div>
+      <div class="field"><label>Spoke Public WAN IP</label>
+        <input type="text" data-f="wp" placeholder="x.x.x.x">
+      </div>
+      <div class="field"><label>Hub-Side Tunnel IP</label>
+        <input type="text" data-f="ht" placeholder="10.255.255.${10+(wNum-1)*4}">
+      </div>
+      <div class="field"><label>Spoke-Side Tunnel IP</label>
+        <input type="text" data-f="st" placeholder="10.255.255.${20+(wNum-1)*4}">
+      </div>
+    </div>`;
+  wc.appendChild(row);
+  updSdwanBadge(sid);
+  updAddWanBtn(sid);
+}
+
+function removeWan(btn, sid) {
+  btn.closest('.wan-row').remove();
+  const wc = document.getElementById(`wans-${sid}`);
+  wc.querySelectorAll('.wan-row').forEach((r,i) => {
+    r.dataset.wn = i+1;
+    r.querySelector('.wan-label').textContent = `WAN ${i+1}`;
+  });
+  updSdwanBadge(sid);
+  updAddWanBtn(sid);
+}
+
+function updSdwanBadge(sid) {
+  const n = document.getElementById(`wans-${sid}`).children.length;
+  const b = document.getElementById(`sdwanbadge-${sid}`);
+  if (b) b.style.display = n > 1 ? 'inline' : 'none';
+}
+
+function updAddWanBtn(sid) {
+  const n = document.getElementById(`wans-${sid}`).children.length;
+  const b = document.getElementById(`addwan-${sid}`);
+  if (b) b.style.display = n >= 3 ? 'none' : 'inline-flex';
+}
+
+// ─── READ FORM ────────────────────────────────────────────
+function fv(id) { const e = document.getElementById(id); return e ? e.value.trim() : ''; }
+
+function readSpokes() {
+  return [...document.querySelectorAll('.spoke-card')].map(card => {
+    const id = card.dataset.sid;
+    const wans = [...document.getElementById(`wans-${id}`).querySelectorAll('.wan-row')].map((r,i) => ({
+      num: i+1,
+      wi:  r.querySelector('[data-f="wi"]').value.trim(),
+      wp:  r.querySelector('[data-f="wp"]').value.trim(),
+      ht:  r.querySelector('[data-f="ht"]').value.trim(),
+      st:  r.querySelector('[data-f="st"]').value.trim(),
+    }));
+    return {
+      id,
+      hn:  fv(`s${id}-hn`),
+      hp:  fv(`s${id}-hp`),
+      sp:  fv(`s${id}-sp`),
+      li:  fv(`s${id}-li`) || 'internal',
+      ln:  fv(`s${id}-ln`),
+      rid: fv(`s${id}-rid`),
+      as:  fv(`s${id}-as`),
+      wans,
+    };
+  });
+}
+
+// ─── VALIDATE ─────────────────────────────────────────────
+function validate(hub, spokes) {
+  const e = [];
+  if (!fv('psk'))     e.push('Pre-Shared Key');
+  if (!hub.wan)       e.push('Hub WAN Interface');
+  if (!hub.wanIp)     e.push('Hub Public WAN IP');
+  if (!hub.lan)       e.push('Hub LAN Subnet');
+  if (!hub.rid)       e.push('Hub Router ID');
+  if (!hub.as)        e.push('Hub AS Number');
+  if (!spokes.length) e.push('At least one spoke required');
+  spokes.forEach((s,i) => {
+    const n = `Spoke ${i+1}`;
+    if (!s.hn)  e.push(`${n} Hostname`);
+    if (!s.hp)  e.push(`${n} Hub Tunnel Prefix`);
+    if (!s.sp)  e.push(`${n} Spoke Tunnel Prefix`);
+    if (!s.ln)  e.push(`${n} LAN Subnet`);
+    if (!s.rid) e.push(`${n} Router ID`);
+    if (!s.as)  e.push(`${n} AS Number`);
+    s.wans.forEach((w,wi) => {
+      const wn = `${n} WAN${wi+1}`;
+      if (!w.wi) e.push(`${wn} Interface`);
+      if (!w.wp) e.push(`${wn} Public IP`);
+      if (!w.ht) e.push(`${wn} Hub Tunnel IP`);
+      if (!w.st) e.push(`${wn} Spoke Tunnel IP`);
+    });
+  });
+  return e;
+}
+
+// ─── SUBNET ───────────────────────────────────────────────
+function sub(cidr) {
+  if (!cidr) return { n:'0.0.0.0', m:'0.0.0.0' };
+  if (cidr.includes('/')) {
+    const [n,b] = cidr.split('/');
+    return { n: n.trim(), m: bits2mask(+b) };
+  }
+  return { n: cidr, m: '255.255.255.0' };
+}
+function bits2mask(b) {
+  return [0,1,2,3].map(i => { const n=Math.min(Math.max(b-i*8,0),8); return n?256-Math.pow(2,8-n):0; }).join('.');
+}
+
+// ─── TUNNEL NAME HELPERS ──────────────────────────────────
+function htn(s, wnum) { return s.wans.length>1 ? `${s.hp}_W${wnum}` : s.hp; }
+function stn(s, wnum) { return s.wans.length>1 ? `${s.sp}_W${wnum}` : s.sp; }
+
+// ─── LINE HELPER ─────────────────────────────────────────
+function L(s) { return s+'\n'; }
+
+// ─── GENERATE ─────────────────────────────────────────────
+function generate() {
+  const hub = {
+    hn:     fv('hub-hostname') || 'HUB-FW',
+    wan:    fv('hub-wan'),
+    lanI:   fv('hub-lan-intf') || 'port2',
+    wanIp:  fv('hub-wan-ip'),
+    lan:    fv('hub-lan'),
+    rid:    fv('hub-router-id'),
+    as:     fv('hub-as'),
+  };
+  const spokes = readSpokes();
+  const sh = { psk: fv('psk'), ike: fv('ike-ver'), prop: fv('proposal'), dhgrp: fv('dhgrp') };
+
+  const errs = validate(hub, spokes);
+  const alertEl = document.getElementById('val-alert');
+  if (errs.length) {
+    alertEl.textContent = '⚠  Missing required fields: ' + errs.join(' · ');
+    alertEl.classList.add('show');
+    return;
+  }
+  alertEl.classList.remove('show');
+
+  configs = {};
+  configs['hub'] = genHub(hub, spokes, sh);
+  spokes.forEach(s => { configs[`spk_${s.id}`] = genSpoke(hub, s, sh); });
+
+  // Build output tabs
+  const tabsEl = document.getElementById('out-tabs');
+  tabsEl.innerHTML = '';
+  const keys   = ['hub', ...spokes.map(s => `spk_${s.id}`)];
+  const labels = ['HUB', ...spokes.map(s => s.hn || 'SPOKE')];
+  keys.forEach((k,i) => {
+    const b = document.createElement('button');
+    b.className = 'out-tab' + (i===0?' active':'');
+    b.textContent = labels[i];
+    b.onclick = () => switchOut(k,b);
+    tabsEl.appendChild(b);
+  });
+
+  activeOut = 'hub';
+  document.getElementById('config-out').innerHTML = hl(configs['hub']);
+  document.getElementById('output-section').classList.add('show');
+  resetCopy();
+  setTimeout(() => document.getElementById('output-section').scrollIntoView({behavior:'smooth',block:'start'}), 100);
+}
+
+// ─── HUB CONFIG ───────────────────────────────────────────
+function genHub(hub, spokes, sh) {
+  const hl2 = sub(hub.lan);
+  const ts  = new Date().toLocaleString();
+  const bar = '═'.repeat(60);
+  const dash = n => '─'.repeat(n);
+
+  let c = '';
+  c += L(`# ${bar}`);
+  c += L(`# HUB CONFIG  ::  ${hub.hn}`);
+  c += L(`# Generated   ::  ${ts}`);
+  c += L(`# Spokes      ::  ${spokes.map(s=>s.hn||'?').join(', ')}`);
+  c += L(`# ${bar}\n`);
+
+  // Phase 1
+  c += L(`# ${dash(18)} Phase 1 ${dash(33)}`);
+  c += L(`config vpn ipsec phase1-interface`);
+  spokes.forEach(s => s.wans.forEach(w => {
+    const t = htn(s,w.num);
+    c += L(`    edit "${t}"`);
+    c += L(`        set interface "${hub.wan}"`);
+    c += L(`        set ike-version ${sh.ike}`);
+    c += L(`        set peertype any`);
+    c += L(`        set net-device disable`);
+    c += L(`        set proposal ${sh.prop}`);
+    c += L(`        set dhgrp ${sh.dhgrp}`);
+    c += L(`        set remote-gw ${w.wp}`);
+    c += L(`        set psksecret "${sh.psk}"`);
+    c += L(`    next`);
+  }));
+  c += L(`end\n`);
+
+  // Phase 2
+  c += L(`# ${dash(18)} Phase 2 ${dash(33)}`);
+  c += L(`config vpn ipsec phase2-interface`);
+  spokes.forEach(s => s.wans.forEach(w => {
+    const t = htn(s,w.num);
+    c += L(`    edit "${t}"`);
+    c += L(`        set phase1name "${t}"`);
+    c += L(`        set proposal ${sh.prop}`);
+    c += L(`        set dhgrp ${sh.dhgrp}`);
+    c += L(`        set src-addr-type subnet`);
+    c += L(`        set dst-addr-type subnet`);
+    c += L(`        set src-subnet 0.0.0.0 0.0.0.0`);
+    c += L(`        set dst-subnet 0.0.0.0 0.0.0.0`);
+    c += L(`        set keylifeseconds 28800`);
+    c += L(`    next`);
+  }));
+  c += L(`end\n`);
+
+  // Tunnel Interfaces
+  c += L(`# ${dash(18)} Tunnel Interfaces ${dash(23)}`);
+  c += L(`config system interface`);
+  spokes.forEach(s => s.wans.forEach(w => {
+    const t = htn(s,w.num);
+    c += L(`    edit "${t}"`);
+    c += L(`        set vdom "root"`);
+    c += L(`        set ip ${w.ht} 255.255.255.255`);
+    c += L(`        set allowaccess ping`);
+    c += L(`        set type tunnel`);
+    c += L(`        set remote-ip ${w.st} 255.255.255.0`);
+    c += L(`        set interface "${hub.wan}"`);
+    c += L(`    next`);
+  }));
+  c += L(`end\n`);
+
+  // Firewall Policies
+  c += L(`# ${dash(18)} Firewall Policies ${dash(22)}`);
+  c += L(`config firewall policy`);
+  spokes.forEach(s => s.wans.forEach(w => {
+    const t = htn(s,w.num);
+    c += L(`    # --- ${t} ---`);
+    [['LAN_to_'+t, hub.lanI, t],
+     [t+'_to_LAN', t, hub.lanI],
+     [t+'_BGP',    t, t]].forEach(([name,src,dst]) => {
+      c += L(`    edit 0`);
+      c += L(`        set name "${name}"`);
+      c += L(`        set srcintf "${src}"`);
+      c += L(`        set dstintf "${dst}"`);
+      c += L(`        set srcaddr "all"`);
+      c += L(`        set dstaddr "all"`);
+      c += L(`        set action accept`);
+      c += L(`        set schedule "always"`);
+      c += L(`        set service "ALL"`);
+      c += L(`    next`);
+    });
+  }));
+  c += L(`end\n`);
+
+  // BGP
+  c += L(`# ${dash(18)} BGP ${dash(37)}`);
+  c += L(`config router bgp`);
+  c += L(`    set as ${hub.as}`);
+  c += L(`    set router-id ${hub.rid}`);
+  c += L(`    set ibgp-multipath enable\n`);
+  c += L(`    config neighbor`);
+  spokes.forEach(s => s.wans.forEach(w => {
+    const t = htn(s,w.num);
+    c += L(`        # ${s.hn} — WAN${w.num} — via ${t}`);
+    c += L(`        edit "${w.st}"`);
+    c += L(`            set remote-as ${s.as}`);
+    c += L(`            set interface "${t}"`);
+    c += L(`            set update-source "${t}"`);
+    c += L(`            set soft-reconfiguration enable`);
+    c += L(`            set connect-timer 10`);
+    c += L(`            set keep-alive-timer 10`);
+    c += L(`            set holdtime-timer 30`);
+    c += L(`        next`);
+  }));
+  c += L(`    end\n`);
+  c += L(`    config network`);
+  c += L(`        edit 1`);
+  c += L(`            set prefix ${hl2.n} ${hl2.m}`);
+  c += L(`        next`);
+  c += L(`    end`);
+  c += L(`end`);
+  return c;
+}
+
+// ─── SPOKE CONFIG ─────────────────────────────────────────
+function genSpoke(hub, s, sh) {
+  const spkLan = sub(s.ln);
+  const hubLan = sub(hub.lan);
+  const multi  = s.wans.length > 1;
+  const zone   = 'vpn-overlay';
+  const ts     = new Date().toLocaleString();
+  const bar    = '═'.repeat(60);
+  const dash   = n => '─'.repeat(n);
+
+  let c = '';
+  c += L(`# ${bar}`);
+  c += L(`# SPOKE CONFIG  ::  ${s.hn}`);
+  c += L(`# Generated     ::  ${ts}`);
+  c += L(`# SD-WAN        ::  ${multi ? 'YES — '+s.wans.length+' WANs (active/passive)' : 'NO — single WAN'}`);
+  c += L(`# Hub           ::  ${hub.hn}  (${hub.wanIp})`);
+  c += L(`# ${bar}\n`);
+
+  // Phase 1
+  c += L(`# ${dash(18)} Phase 1 ${dash(33)}`);
+  c += L(`config vpn ipsec phase1-interface`);
+  s.wans.forEach(w => {
+    const t = stn(s,w.num);
+    c += L(`    edit "${t}"`);
+    c += L(`        set interface "${w.wi}"`);
+    c += L(`        set ike-version ${sh.ike}`);
+    c += L(`        set peertype any`);
+    c += L(`        set net-device disable`);
+    c += L(`        set proposal ${sh.prop}`);
+    c += L(`        set dhgrp ${sh.dhgrp}`);
+    c += L(`        set remote-gw ${hub.wanIp}`);
+    c += L(`        set psksecret "${sh.psk}"`);
+    c += L(`    next`);
+  });
+  c += L(`end\n`);
+
+  // Phase 2
+  c += L(`# ${dash(18)} Phase 2 ${dash(33)}`);
+  c += L(`config vpn ipsec phase2-interface`);
+  s.wans.forEach(w => {
+    const t = stn(s,w.num);
+    c += L(`    edit "${t}"`);
+    c += L(`        set phase1name "${t}"`);
+    c += L(`        set proposal ${sh.prop}`);
+    c += L(`        set dhgrp ${sh.dhgrp}`);
+    c += L(`        set src-addr-type subnet`);
+    c += L(`        set dst-addr-type subnet`);
+    c += L(`        set src-subnet 0.0.0.0 0.0.0.0`);
+    c += L(`        set dst-subnet 0.0.0.0 0.0.0.0`);
+    c += L(`        set keylifeseconds 28800`);
+    c += L(`    next`);
+  });
+  c += L(`end\n`);
+
+  // Tunnel Interfaces
+  c += L(`# ${dash(18)} Tunnel Interfaces ${dash(23)}`);
+  c += L(`config system interface`);
+  s.wans.forEach(w => {
+    const t = stn(s,w.num);
+    c += L(`    edit "${t}"`);
+    c += L(`        set vdom "root"`);
+    c += L(`        set ip ${w.st} 255.255.255.255`);
+    c += L(`        set allowaccess ping`);
+    c += L(`        set type tunnel`);
+    c += L(`        set remote-ip ${w.ht} 255.255.255.0`);
+    c += L(`        set interface "${w.wi}"`);
+    c += L(`    next`);
+  });
+  c += L(`end\n`);
+
+  // SD-WAN (multi-WAN only)
+  if (multi) {
+    c += L(`# ${dash(18)} SD-WAN (${s.wans.length} WANs — active/passive) ${dash(10)}`);
+    c += L(`# Tip: set equal cost values on all members for active/active load balancing.`);
+    c += L(`config system sdwan`);
+    c += L(`    set status enable`);
+    c += L(`    config zone`);
+    c += L(`        edit "${zone}"`);
+    c += L(`        next`);
+    c += L(`    end`);
+    c += L(`    config members`);
+    s.wans.forEach((w,i) => {
+      c += L(`        edit ${i+1}`);
+      c += L(`            set interface "${stn(s,w.num)}"`);
+      c += L(`            set zone "${zone}"`);
+      c += L(`            set cost ${i*10}`);
+      c += L(`        next`);
+    });
+    c += L(`    end`);
+    c += L(`    config health-check`);
+    c += L(`        edit "HUB_SLA"`);
+    c += L(`            set server "${s.wans[0].ht}"`);
+    c += L(`            set protocol ping`);
+    c += L(`            set interval 1000`);
+    c += L(`            set failtime 5`);
+    c += L(`            set recoverytime 5`);
+    c += L(`            set members ${s.wans.map((_,i)=>i+1).join(' ')}`);
+    c += L(`        next`);
+    c += L(`    end`);
+    c += L(`    config service`);
+    c += L(`        edit 1`);
+    c += L(`            set name "To_HUB_Networks"`);
+    c += L(`            set mode lowest-cost`);
+    c += L(`            config sla`);
+    c += L(`                edit "HUB_SLA"`);
+    c += L(`                    set id 1`);
+    c += L(`                next`);
+    c += L(`            end`);
+    c += L(`            set priority-members ${s.wans.map((_,i)=>i+1).join(' ')}`);
+    c += L(`        next`);
+    c += L(`    end`);
+    c += L(`end\n`);
+
+    c += L(`# ${dash(18)} Static Route via SD-WAN Zone ${dash(12)}`);
+    c += L(`config router static`);
+    c += L(`    edit 0`);
+    c += L(`        set dst ${hubLan.n} ${hubLan.m}`);
+    c += L(`        set sdwan-zone "${zone}"`);
+    c += L(`    next`);
+    c += L(`end\n`);
+  } else {
+    c += L(`# ${dash(18)} Static Route ${dash(28)}`);
+    c += L(`config router static`);
+    c += L(`    edit 0`);
+    c += L(`        set dst ${hubLan.n} ${hubLan.m}`);
+    c += L(`        set device "${stn(s,1)}"`);
+    c += L(`    next`);
+    c += L(`end\n`);
+  }
+
+  // Firewall Policies
+  c += L(`# ${dash(18)} Firewall Policies ${dash(22)}`);
+  c += L(`config firewall policy`);
+  s.wans.forEach(w => {
+    const t = stn(s,w.num);
+    c += L(`    # --- ${t} ---`);
+    [['LAN_to_'+t, s.li, t],
+     [t+'_to_LAN', t, s.li],
+     [t+'_BGP',    t, t]].forEach(([name,src,dst]) => {
+      c += L(`    edit 0`);
+      c += L(`        set name "${name}"`);
+      c += L(`        set srcintf "${src}"`);
+      c += L(`        set dstintf "${dst}"`);
+      c += L(`        set srcaddr "all"`);
+      c += L(`        set dstaddr "all"`);
+      c += L(`        set action accept`);
+      c += L(`        set schedule "always"`);
+      c += L(`        set service "ALL"`);
+      c += L(`    next`);
+    });
+  });
+  c += L(`end\n`);
+
+  // BGP
+  c += L(`# ${dash(18)} BGP ${dash(37)}`);
+  c += L(`# One BGP session per tunnel. SD-WAN steers data; BGP handles route distribution.`);
+  c += L(`config router bgp`);
+  c += L(`    set as ${s.as}`);
+  c += L(`    set router-id ${s.rid}\n`);
+  c += L(`    config neighbor`);
+  s.wans.forEach(w => {
+    const t = stn(s,w.num);
+    c += L(`        # WAN${w.num} — via ${t}`);
+    c += L(`        edit "${w.ht}"`);
+    c += L(`            set remote-as ${hub.as}`);
+    c += L(`            set interface "${t}"`);
+    c += L(`            set update-source "${t}"`);
+    c += L(`            set soft-reconfiguration enable`);
+    c += L(`            set connect-timer 10`);
+    c += L(`            set keep-alive-timer 10`);
+    c += L(`            set holdtime-timer 30`);
+    c += L(`        next`);
+  });
+  c += L(`    end\n`);
+  c += L(`    config network`);
+  c += L(`        edit 1`);
+  c += L(`            set prefix ${spkLan.n} ${spkLan.m}`);
+  c += L(`        next`);
+  c += L(`    end`);
+  c += L(`end`);
+  return c;
+}
+
+// ─── SYNTAX HIGHLIGHT ────────────────────────────────────
+function hl(code) {
+  return code
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^(#.+)$/gm,'<span class="cmt">$1</span>')
+    .replace(/\b(config|edit|set|next|end)\b/g,'<span class="kw">$1</span>')
+    .replace(/"([^"]+)"/g,'"<span class="str">$1</span>"')
+    .replace(/\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b/g,'<span class="num">$1</span>');
+}
+
+// ─── COPY ────────────────────────────────────────────────
+function copyConfig() {
+  navigator.clipboard.writeText(configs[activeOut]||'').then(()=>{
+    const b=document.getElementById('copy-btn');
+    b.textContent='COPIED ✓';b.classList.add('ok');
+    setTimeout(resetCopy,2000);
+  });
+}
+function resetCopy(){
+  const b=document.getElementById('copy-btn');
+  b.textContent='COPY';b.classList.remove('ok');
+}
+
+// ─── INIT ────────────────────────────────────────────────
+addSpoke();
+</script>
+</body>
+</html>
